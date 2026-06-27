@@ -147,16 +147,18 @@ class TestCallback:
 # ---------------------------------------------------------------------------
 
 class TestComposioClientMockMode:
-    def test_initiate_returns_mock_account_id(self):
+    @pytest.mark.asyncio
+    async def test_initiate_returns_mock_account_id(self):
         from app.connections.composio_client import initiate_connection
-        result = initiate_connection("strava")
+        result = await initiate_connection("strava")
         assert result.account_id.startswith("mock-")
         assert result.redirect_url is None
 
-    def test_get_status_mock_is_connected(self):
+    @pytest.mark.asyncio
+    async def test_get_status_mock_is_connected(self):
         from app.connections.composio_client import get_connection_status
         from app.contracts import ConnectionStatus
-        status = get_connection_status("mock-strava-account")
+        status = await get_connection_status("mock-strava-account")
         assert status == ConnectionStatus.CONNECTED
 
     def test_get_mcp_url_mock(self):
@@ -164,14 +166,16 @@ class TestComposioClientMockMode:
         url = get_mcp_url("strava", "mock-strava-account")
         assert "strava" in url
 
-    def test_get_available_tools_mock(self):
+    @pytest.mark.asyncio
+    async def test_get_available_tools_mock(self):
         from app.connections.composio_client import get_available_tools
-        tools = get_available_tools("strava", "mock-strava-account")
-        assert "get_activities" in tools
+        tools = await get_available_tools("strava", "mock-strava-account")
+        assert "STRAVA_GET_ATHLETE" in tools
 
-    def test_get_available_tools_unknown_app(self):
+    @pytest.mark.asyncio
+    async def test_get_available_tools_unknown_app(self):
         from app.connections.composio_client import get_available_tools
-        tools = get_available_tools("unknown_app", "mock-unknown-account")
+        tools = await get_available_tools("unknown_app", "mock-unknown-account")
         assert tools == []
 
 
