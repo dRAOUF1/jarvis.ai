@@ -75,20 +75,24 @@ class WarmPoolProvisioner(ProfileProvisioner):
 
 
 def get_provisioner() -> ProfileProvisioner:
-    """Factory — return the correct provisioner based on PROVISIONER_MODE.
+    """Factory — return the correct provisioner based on PROVISIONER_MODE."""
+    from pathlib import Path
 
-    Uses mock implementations for C2-owned components until they land.
-    """
     from app.config import settings
     from app.provisioning.gateway import GatewayRegistry
-    from app.mocks.mock_bundle import MockHermesWriter, MockIngestor
+    from app.provisioning.hermes_writer import HermesWriter
+    from app.ingestion.ingestor import Ingestor
+    from app.ingestion.summarizer import Summarizer
+    from app.db.client import get_supabase
 
     gateway_registry = GatewayRegistry()
 
     if settings.provisioner_mode == "warmpool":
+        profiles_dir = Path(__file__).resolve().parents[3] / "hermes" / "profiles"
+        db = get_supabase()
         return WarmPoolProvisioner(
-            hermes_writer=MockHermesWriter(),
-            ingestor=MockIngestor(),
+            hermes_writer=HermesWriter(profiles_dir, gateway_registry),
+            ingestor=Ingestor(db, Summarizer()),
             gateway_registry=gateway_registry,
         )
 
