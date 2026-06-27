@@ -1,0 +1,53 @@
+"""
+Pydantic v2 contract models — the single source of truth for the API contract.
+"""
+
+from .models import (
+    ProvisioningState,
+    ConnectionStatus,
+    TaskItem,
+    ToolRequirement,
+    ProjectSpec,
+    ArtifactBundle,
+    Connection,
+    ProfileHandle,
+    Project,
+    Msg,
+    Delta,
+    Action,
+    Done,
+    Err,
+    RuntimeEvent,
+    QuestionPayload,
+    ShapingDelta,
+    ShapingQuestion,
+    ShapingSpecUpdate,
+    ShapingProposal,
+    ShapingDone,
+    ShapingEvent,
+)
+
+__all__ = [
+    "ProvisioningState",
+    "ConnectionStatus",
+    "TaskItem",
+    "ToolRequirement",
+    "ProjectSpec",
+    "ArtifactBundle",
+    "Connection",
+    "ProfileHandle",
+    "Project",
+    "Msg",
+    "Delta",
+    "Action",
+    "Done",
+    "Err",
+    "RuntimeEvent",
+    "QuestionPayload",
+    "ShapingDelta",
+    "ShapingQuestion",
+    "ShapingSpecUpdate",
+    "ShapingProposal",
+    "ShapingDone",
+    "ShapingEvent",
+]
