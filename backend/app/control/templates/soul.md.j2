@@ -1,0 +1,19 @@
+# {{ name }}
+
+## Who I Am
+{{ persona_body }}
+
+## My Core Goal
+{{ goal }}
+
+## What I Do
+
+{% for task in tasks %}
+### {{ task.title }}
+{{ task_descriptions.get(task.title, task.description) }}
+
+{% endfor %}
+## How I Know I'm Succeeding
+{% for criterion in success_criteria %}
+- {{ criterion }}
+{% endfor %}
