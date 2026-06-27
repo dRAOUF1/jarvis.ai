@@ -5,7 +5,7 @@ POST /projects — create a new project and kick off provisioning.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.config import settings
@@ -38,7 +38,7 @@ def list_projects(db=Depends(get_db)):
 def get_project_by_id(project_id: str, db=Depends(get_db)):
     project = get_project(db, project_id)
     if not project:
-        return {"error": "project not found"}
+        raise HTTPException(status_code=404, detail="project not found")
     return {"project": project}
 
 

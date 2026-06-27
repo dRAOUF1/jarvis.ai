@@ -55,6 +55,12 @@ async def run_provisioning(
         await transition(db, project_id, ProvisioningState.PROVISIONING)
         handle = await provisioner.provision(bundle, connections, project_id)
 
+        # Persist gateway assignment so the runtime can route requests
+        db.table("projects").update({
+            "runtime_key": handle.runtime_key,
+            "gateway_url": handle.gateway_url,
+        }).eq("id", project_id).execute()
+
         # INGESTING — scrape memory
         await transition(db, project_id, ProvisioningState.INGESTING)
 
