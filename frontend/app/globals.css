@@ -1,0 +1,59 @@
+@import "../lib/design/tokens.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--bg-0);
+    color: var(--fg-0);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  h1 { font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.011em; }
+  h2 { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.011em; }
+  h3 { font-size: 16px; line-height: 24px; font-weight: 600; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-ring);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--bg-2) 25%,
+      var(--bg-3) 50%,
+      var(--bg-2) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  .text-fg-0 { color: var(--fg-0); }
+  .text-fg-1 { color: var(--fg-1); }
+  .text-fg-2 { color: var(--fg-2); }
+}

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.contracts import Connection, ConnectionStatus, ProjectSpec, ProvisioningState
-from app.db.queries import create_project, get_connection, get_project, get_projects
+from app.db.queries import create_project, get_connection, get_memory, get_project, get_projects
 from app.deps import get_agent_provisioner, get_db
 from app.mocks.mock_connections import get_mock_connections
 from app.provisioning.state_machine import run_provisioning
@@ -40,6 +40,14 @@ def get_project_by_id(project_id: str, db=Depends(get_db)):
     if not project:
         raise HTTPException(status_code=404, detail="project not found")
     return {"project": project}
+
+
+@router.get("/{project_id}/memory")
+def get_project_memory(project_id: str, db=Depends(get_db)):
+    project = get_project(db, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="project not found")
+    return {"memory": get_memory(db, project_id)}
 
 
 # --- POST endpoint ---

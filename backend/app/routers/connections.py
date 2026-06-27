@@ -53,18 +53,18 @@ def list_connections(db: Client = Depends(get_db)):
 
 
 @router.post("/connections", response_model=ConnectResponse)
-def connect_app(body: ConnectRequest, db: Client = Depends(get_db)):
-    connection, redirect_url = oauth_helpers.initiate_connection(
+async def connect_app(body: ConnectRequest, db: Client = Depends(get_db)):
+    connection, redirect_url = await oauth_helpers.initiate_connection(
         db, settings.demo_user_id, body.app
     )
     return ConnectResponse(connection=connection, redirect_url=redirect_url)
 
 
 @router.get("/connections/callback")
-def oauth_callback(connection_id: str, db: Client = Depends(get_db)):
+async def oauth_callback(connection_id: str, db: Client = Depends(get_db)):
     """Composio redirects here after OAuth. Updates status and MCP URL."""
     try:
-        oauth_helpers.handle_callback(db, connection_id)
+        await oauth_helpers.handle_callback(db, connection_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     # Redirect back to the frontend connections page
