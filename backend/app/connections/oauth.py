@@ -12,13 +12,15 @@ from app.db import queries
 
 
 def _row_to_connection(row: dict) -> Connection:
+    # DB column is `scopes`; Connection contract field is `available_tools`
+    tools = row.get("available_tools") or row.get("scopes") or []
     return Connection(
         id=row["id"],
         user_id=row["user_id"],
         app=row["app"],
         status=ConnectionStatus(row.get("status", "pending")),
         mcp_url=row.get("mcp_url"),
-        available_tools=row.get("available_tools") or [],
+        available_tools=tools,
     )
 
 
@@ -41,7 +43,7 @@ def initiate_connection(db: Client, user_id: str, app: str) -> tuple[Connection,
         "status": ConnectionStatus.PENDING.value,
         "composio_account_id": result.account_id,
         "mcp_url": None,
-        "available_tools": [],
+        "scopes": [],
     })
 
     # If mock (no redirect), immediately activate the connection
@@ -75,6 +77,6 @@ def _activate(db: Client, row: dict, account_id: str, app: str) -> dict:
         **row,
         "status": ConnectionStatus.CONNECTED.value,
         "mcp_url": mcp_url,
-        "available_tools": tools,
+        "scopes": tools,
     }
     return queries.upsert_connection(db, updated)

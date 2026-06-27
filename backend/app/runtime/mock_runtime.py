@@ -11,6 +11,7 @@ from collections.abc import AsyncIterable
 
 from supabase import Client
 
+from app.config import settings
 from app.contracts import Action, Delta, Done, Err, Msg, RuntimeEvent
 from app.db.queries import get_memory
 from app.runtime.base import AgentRuntime
@@ -35,9 +36,10 @@ class MockRuntime(AgentRuntime):
             memory = get_memory(self.db, project_id)
             system_prompt = self._build_system_prompt(memory) if memory else None
 
-            if os.environ.get("ANTHROPIC_API_KEY"):
+            api_key = settings.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY")
+            if api_key:
                 # Real Anthropic streaming
-                async for event in self._chat_anthropic(messages, system_prompt):
+                async for event in self._chat_anthropic(messages, system_prompt, api_key):
                     yield event
             else:
                 # Canned demo response
@@ -54,21 +56,23 @@ class MockRuntime(AgentRuntime):
         return "\n".join(lines)
 
     async def _chat_anthropic(
-        self, messages: list[Msg], system_prompt: str | None
+        self, messages: list[Msg], system_prompt: str | None, api_key: str
     ) -> AsyncIterable[RuntimeEvent]:
         """Stream from Anthropic SDK."""
         import anthropic
 
-        client = anthropic.AsyncAnthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+        client = anthropic.AsyncAnthropic(api_key=api_key)
 
         msg_list = [{"role": m.role, "content": m.content} for m in messages]
+        kwargs: dict = {
+            "model": "claude-sonnet-4-6",
+            "max_tokens": 4096,
+            "messages": msg_list,
+        }
+        if system_prompt:
+            kwargs["system"] = system_prompt
 
-        async with client.messages.stream(
-            model="claude-sonnet-4-6",
-            max_tokens=4096,
-            system=system_prompt,
-            messages=msg_list,
-        ) as stream:
+        async with client.messages.stream(**kwargs) as stream:
             async for text in stream.text_stream:
                 yield Delta(text=text)
 
