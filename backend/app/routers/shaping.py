@@ -5,7 +5,7 @@ import json
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from sse_starlette.sse import EventSourceResponse
+from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 
 from app.contracts import ShapingDone, ShapingEvent
 
@@ -30,6 +30,9 @@ async def shape_stream(body: ShapeRequest):
 
     async def generate():
         async for event in _shape(messages):
-            yield {"data": event.model_dump_json()}
+            yield ServerSentEvent(
+                data=event.model_dump_json(),
+                event=event.type,
+            )
 
     return EventSourceResponse(generate())

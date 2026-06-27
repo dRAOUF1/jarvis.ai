@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterable
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 
 from app.contracts import Msg
@@ -37,11 +37,11 @@ async def chat(
     """
     user_msg = body.get("message", "")
     if not user_msg:
-        return {"error": "message is required"}
+        raise HTTPException(status_code=422, detail="message is required")
 
     project = get_project(db, project_id)
     if not project:
-        return {"error": "project not found"}
+        raise HTTPException(status_code=404, detail="project not found")
 
     # Persist user message
     insert_message(db, project_id, "user", user_msg)

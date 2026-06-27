@@ -5,7 +5,7 @@ POST /projects — create a new project and kick off provisioning.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.config import settings
@@ -38,7 +38,7 @@ def list_projects(db=Depends(get_db)):
 def get_project_by_id(project_id: str, db=Depends(get_db)):
     project = get_project(db, project_id)
     if not project:
-        return {"error": "project not found"}
+        raise HTTPException(status_code=404, detail="project not found")
     return {"project": project}
 
 
@@ -53,7 +53,7 @@ async def create_project_endpoint(
     """Compile spec → bundle, resolve connections, run provisioning state machine."""
     spec = body.spec
 
-    # 1. Create the project row in DB (placeholder session_key updated after we have the UUID)
+    # 1. Create the project row in DB (session_key updated once we have the UUID)
     project_data = {
         "user_id": settings.demo_user_id,
         "name": spec.name,
@@ -65,6 +65,13 @@ async def create_project_endpoint(
     }
     project = create_project(db, project_data)
     project_id = project["id"]
+
+    # Fix session_key now that we have the real UUID
+    from app.db.queries import update_project_status  # noqa: F401 (reuse db path)
+    db.table("projects").update(
+        {"session_key": f"agent:{project_id}:user:{settings.demo_user_id}"}
+    ).eq("id", project_id).execute()
+    project["session_key"] = f"agent:{project_id}:user:{settings.demo_user_id}"
 
     # 2. Compile spec → ArtifactBundle (B1)
     from app.control.compiler import Compiler

@@ -28,9 +28,15 @@ async def test_hero_path() -> None:
         r = await client.post(
             f"{BASE}/projects",
             json={
-                "name": "Test Coach",
-                "goal": "Sports coaching",
-                "avatar_seed": "coach",
+                "spec": {
+                    "name": "Test Coach",
+                    "goal": "Sports coaching",
+                    "persona": "Friendly sports coach",
+                    "tasks": [],
+                    "tool_requirements": [],
+                    "success_criteria": [],
+                    "avatar_seed": "coach",
+                },
                 "connection_ids": [],
             },
         )

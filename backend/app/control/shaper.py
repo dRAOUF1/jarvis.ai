@@ -124,7 +124,7 @@ _SHAPER_TOOLS = [
 # ---------------------------------------------------------------------------
 
 _CATALOG_SUMMARY = ", ".join(
-    f"{app.id} ({app.description})" for app in CATALOG
+    f"{app.app} ({app.description})" for app in CATALOG
 )
 
 _SYSTEM = f"""You are a friendly project setup assistant for jarvis.ai. Your job is to interview \
