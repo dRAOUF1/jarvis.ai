@@ -1,6 +1,10 @@
 # Vendored Hermes engine source (not part of the §3 layout)
 hermes-agent-main/
 
+# Hermes provisioned profile dirs (generated at runtime — keep only _template)
+hermes/profiles/*/
+!hermes/profiles/_template/
+
 # Python
 __pycache__/
 *.py[cod]
