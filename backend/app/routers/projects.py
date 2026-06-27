@@ -9,10 +9,9 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.config import settings
-from app.contracts import ProvisioningState
-from app.db.queries import create_project, get_project, get_projects
+from app.contracts import Connection, ConnectionStatus, ProjectSpec, ProvisioningState
+from app.db.queries import create_project, get_connection, get_project, get_projects
 from app.deps import get_agent_provisioner, get_db
-from app.mocks.mock_bundle import get_mock_bundle
 from app.mocks.mock_connections import get_mock_connections
 from app.provisioning.state_machine import run_provisioning
 
@@ -23,19 +22,12 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 # --- Request models ---
 
 class CreateProjectBody(BaseModel):
-    """Minimal body for creating a project.
-
-    TODO H6-H12: B1 will replace this with a compiler.compile() call
-    that takes a full ProjectSpec and returns an ArtifactBundle.
-    For now, we accept a spec dict and use a mock bundle.
-    """
-    name: str = "Untitled Project"
-    goal: str | None = None
-    avatar_seed: str | None = None
+    """Body for POST /projects (ARCHITECTURE.md §6)."""
+    spec: ProjectSpec
     connection_ids: list[str] = []
 
 
-# --- GET endpoints (always available) ---
+# --- GET endpoints ---
 
 @router.get("")
 def list_projects(db=Depends(get_db)):
@@ -58,32 +50,44 @@ async def create_project_endpoint(
     db=Depends(get_db),
     provisioner=Depends(get_agent_provisioner),
 ):
-    """Create a new project, compile a bundle (mock for now), and provision it."""
-    # 1. Create the project in DB with status=draft
-    session_key = f"agent:PLACEHOLDER:user:{settings.demo_user_id}"
+    """Compile spec → bundle, resolve connections, run provisioning state machine."""
+    spec = body.spec
+
+    # 1. Create the project row in DB (placeholder session_key updated after we have the UUID)
     project_data = {
         "user_id": settings.demo_user_id,
-        "name": body.name,
-        "goal": body.goal,
+        "name": spec.name,
+        "goal": spec.goal,
         "status": ProvisioningState.DRAFT.value,
-        "spec": body.model_dump(),
-        "session_key": session_key,
-        "avatar_seed": body.avatar_seed,
+        "spec": spec.model_dump(),
+        "session_key": f"agent:PLACEHOLDER:user:{settings.demo_user_id}",
+        "avatar_seed": spec.avatar_seed,
     }
     project = create_project(db, project_data)
+    project_id = project["id"]
 
-    # 2. Use mock bundle (TODO: replace with B1 compiler)
-    bundle = get_mock_bundle()
+    # 2. Compile spec → ArtifactBundle (B1)
+    from app.control.compiler import Compiler
+    bundle = await Compiler().compile(spec, project_id=project_id, user_id=settings.demo_user_id)
 
-    # 3. Use mock connections (TODO: replace with C1 connection resolver)
-    connections = get_mock_connections()
+    # 3. Resolve connections — use real ones from DB if provided, fall back to mock (C1 fills this)
+    if body.connection_ids:
+        raw = [get_connection(db, cid) for cid in body.connection_ids]
+        connections = [
+            Connection(
+                id=c["id"],
+                user_id=c["user_id"],
+                app=c["app"],
+                status=ConnectionStatus(c["status"]),
+                mcp_url=c.get("mcp_url"),
+                available_tools=c.get("scopes") or [],
+            )
+            for c in raw if c
+        ]
+    else:
+        connections = get_mock_connections()
 
-    # 4. Run the full provisioning state machine
-    handle = await run_provisioning(db, project["id"], bundle, connections, provisioner)
+    # 4. Run provisioning state machine
+    handle = await run_provisioning(db, project_id, bundle, connections, provisioner)
 
-    # 5. Update session_key with actual project_id
-    from app.db.queries import update_project_status
-    real_session_key = f"agent:{project['id']}:user:{settings.demo_user_id}"
-    update_project_status(db, project["id"], ProvisioningState.READY.value)
-
-    return {"project": project, "handle": handle.model_dump()}
+    return {"project": {**project, "id": project_id}, "handle": handle.model_dump()}
