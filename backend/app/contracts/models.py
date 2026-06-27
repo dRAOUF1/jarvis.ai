@@ -75,6 +75,14 @@ class ArtifactBundle(BaseModel):
 # Connection / ProfileHandle / Project
 # ---------------------------------------------------------------------------
 
+class AppCatalogItem(BaseModel):
+    app: str
+    display_name: str
+    description: str
+    icon: str
+    default_scopes: list[str] = Field(default_factory=list)
+
+
 class Connection(BaseModel):
     id: str
     user_id: str
